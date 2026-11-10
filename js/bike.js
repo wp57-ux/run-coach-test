@@ -58,16 +58,18 @@ export const ELLIPTICAL_ZONES = {
   hard: { label: 'Hard', pct: 1.35, met: 9, talk: 'Big effort, a few words at most. Hard, not all-out.' },
 };
 
-// Stages 1–7 leave room for a full lift inside 70 minutes. Stage 8 doesn't.
+// Nov 10: never more than 21 minutes in all (your limit; it gets boring), so
+// a 4-min warm-up, a 2-min cool-down, no easy minute after the last hard one,
+// and a goal of 8 hard minutes rather than Hood's 10. After the goal you keep
+// getting fitter through the watts, which climb as sessions feel easy.
+const ivl = (n, easy) => rep(n, [H, 1], [E, easy]).slice(0, -1);
 export const ELLIPTICAL_STAGES = [
   { n: 1, name: '12 min steady', main: [[S, 12]] },
-  { n: 2, name: '4 × (1 hard / 2 easy)', main: rep(4, [H, 1], [E, 2]), milestone: 'Intervals start' },
-  { n: 3, name: '5 × (1 hard / 2 easy)', main: rep(5, [H, 1], [E, 2]) },
-  { n: 4, name: '5 × (1 hard / 1½ easy)', main: rep(5, [H, 1], [E, 1.5]), milestone: 'Shorter breaks' },
-  { n: 5, name: '6 × (1 hard / 1½ easy)', main: rep(6, [H, 1], [E, 1.5]) },
-  { n: 6, name: '7 × (1 hard / 1 easy)', main: rep(7, [H, 1], [E, 1]) },
-  { n: 7, name: '8 × (1 hard / 1 easy)', main: rep(8, [H, 1], [E, 1]) },
-  { n: 8, name: '10 × (1 hard / 1 easy)', main: rep(10, [H, 1], [E, 1]), milestone: 'The goal' },
+  { n: 2, name: '4 × (1 hard / 2 easy)', main: ivl(4, 2), milestone: 'Intervals start' },
+  { n: 3, name: '5 × (1 hard / 2 easy)', main: ivl(5, 2) },
+  { n: 4, name: '6 × (1 hard / 1½ easy)', main: ivl(6, 1.5), milestone: 'Shorter breaks' },
+  { n: 5, name: '7 × (1 hard / 1 easy)', main: ivl(7, 1) },
+  { n: 6, name: '8 × (1 hard / 1 easy)', main: ivl(8, 1), milestone: 'The goal' },
 ];
 
 // Everything that differs between the machines. Each keeps its own stage,
@@ -76,6 +78,7 @@ export const MACHINES = {
   bike: {
     key: 'bike', name: 'Bike', lc: 'bike', label: 'Ride', noun: 'ride', nouns: 'rides', Nouns: 'Rides', doing: 'Riding',
     stages: BIKE_STAGES, zones: ZONES, shown: ['easy', 'steady', 'strong', 'hard'],
+    warm: WARM_MIN, cool: COOL_MIN, maxMin: null,
     clips: { warm: 'bikewarm', cool: 'bikecool', easy: 'easy' },
     rpm: ' at 80–90 rpm', ease: 'Drop the resistance and spin easy.', easeShort: 'Spin easy',
     form: 'Keep about 80–90 rpm. Seat high enough that your knee stays slightly bent at the bottom.',
@@ -95,12 +98,13 @@ export const MACHINES = {
   elliptical: {
     key: 'elliptical', name: 'Elliptical', lc: 'elliptical', label: 'Elliptical', noun: 'session', nouns: 'sessions', Nouns: 'Sessions', doing: 'Working',
     stages: ELLIPTICAL_STAGES, zones: ELLIPTICAL_ZONES, shown: ['easy', 'steady', 'hard'],
+    warm: 4, cool: 2, maxMin: 21,
     clips: { warm: 'ewarm', cool: 'ecool', easy: 'eeasy' },
     rpm: '', ease: 'Drop the level and go easy.', easeShort: 'Go easy',
     form: 'Stand tall, hips level, feet flat on the pedals. If your hip goes past 3 out of 10, ease off.',
-    goal: 'Two green sessions of 10 hard minutes',
-    keepGoing: 'Keep doing stage 8 two or three times a week, with a day in between, and your levels keep climbing.',
-    planNote: 'Every session starts with a 5-minute easy warm-up and ends with a 3-minute cool-down. Leave a day between interval sessions. You move up after 2 green sessions in a row, repeat on amber, and drop back one on red.',
+    goal: 'Two green sessions of 8 hard minutes',
+    keepGoing: 'Keep doing stage 6 two or three times a week, with a day in between, and your watts keep climbing.',
+    planNote: 'Every session is 21 minutes or less: a 4-minute easy warm-up, the work, and a 2-minute cool-down. Leave a day between interval sessions. You move up after 2 green sessions in a row, repeat on amber, and drop back one on red. Once you reach the goal, the watts keep going up instead of the time.',
     levelHelp: 'Easy is 4 levels below your steady level, hard 4 above. Levels differ between machines, so try to use the same one.',
     feelHelp: 'No numbers: easy = chatty, steady = short sentences, hard = a big minute.',
     levelNote: 'The level you used in the steady part.',
@@ -108,7 +112,7 @@ export const MACHINES = {
     liftOnly: 'Starts with 5 min easy on the elliptical or a brisk treadmill walk.',
     // Glave et al. 2018: ellipticals overestimate by about 100 kcal per 30 min.
     calNote: 'Optional. Elliptical screens tend to read high, so leaving this blank and using the app’s estimate is usually closer.',
-    wattsHelp: 'Every target is a share of your steady watts: easy 60%, steady 100%, hard 135%. Watts differ between machines, so try to use the same one. Calories still come from effort, not watts: no formula turns elliptical watts into calories reliably.',
+    wattsHelp: 'Every target is a share of your steady watts: easy 60%, steady 100%, hard 135%. Watts differ between machines, so try to use the same one. Aim by watts, not METs: the METs on the screen are worked out from the same watts and your weight, and they read high. Calories still come from effort, not watts: no formula turns elliptical watts into calories reliably.',
     wattsNote: 'The watts you held in the steady part, from the elliptical’s screen.',
     wattsEg: 'e.g. 150',
   },
@@ -130,14 +134,24 @@ export const bikeStage = (n, m = 'bike') => {
 };
 
 // setup = you still need a steady value. A stage with no steady part then gets
-// 5 steady minutes after the warm-up to find it.
+// 5 steady minutes after the warm-up to find it. A machine with a time limit
+// (the elliptical: 21 min) drops intervals from the end until it fits, and
+// never ends on an easy minute right before the cool-down.
 export function bikeSegments(n, m = 'bike', { setup = false } = {}) {
-  const { clips } = MACHINES[m];
-  const segs = [{ type: 'warmup', zone: E, clip: clips.warm, sec: WARM_MIN * 60 }];
-  if (setup && !bikeStage(n, m).main.some(([z]) => z === S)) segs.push({ type: S, zone: S, clip: S, sec: SETUP_MIN * 60 });
-  for (const [zone, min] of bikeStage(n, m).main) segs.push({ type: zone, zone, clip: zone === E ? clips.easy : zone, sec: min * 60 });
-  segs.push({ type: 'cooldown', zone: E, clip: clips.cool, sec: COOL_MIN * 60 });
-  return segs;
+  const { clips, warm, cool, maxMin } = MACHINES[m];
+  const main = [];
+  if (setup && !bikeStage(n, m).main.some(([z]) => z === S)) main.push({ type: S, zone: S, clip: S, sec: SETUP_MIN * 60 });
+  for (const [zone, min] of bikeStage(n, m).main) main.push({ type: zone, zone, clip: zone === E ? clips.easy : zone, sec: min * 60 });
+  if (maxMin) {
+    const room = (maxMin - warm - cool) * 60;
+    const sum = () => main.reduce((a, s) => a + s.sec, 0);
+    while (main.length > 1 && (sum() > room || main.at(-1).type === E)) main.pop();
+  }
+  return [
+    { type: 'warmup', zone: E, clip: clips.warm, sec: warm * 60 },
+    ...main,
+    { type: 'cooldown', zone: E, clip: clips.cool, sec: cool * 60 },
+  ];
 }
 
 export const zoneOf = type => (type === 'warmup' || type === 'cooldown' ? E : type);

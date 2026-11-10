@@ -396,6 +396,9 @@ output { font-family: var(--display); font-weight: 800; font-size: 17px; color: 
 .wk-clock { display: flex; justify-content: center; margin: 6px 0 8px; font-family: var(--display); font-weight: 800; font-size: clamp(112px, 40vw, 270px); line-height: .9; }
 .wk-clock span { display: inline-block; width: .54em; text-align: center; }
 .wk-clock i { display: inline-block; width: .22em; font-style: normal; text-align: center; transform: translateY(-.06em); }
+.wk-target { margin-top: 8px; font-family: var(--display); font-weight: 900; font-size: clamp(40px, 13vw, 84px); line-height: 1; letter-spacing: .01em; }
+.wk-target:empty { display: none; }
+.tgts-k { display: block; margin: 14px 0 4px; }
 .wk-hint { font-size: 17px; font-weight: 600; opacity: .85; }
 .wk-hint b { font-weight: 800; }
 .wk-next { margin-top: 12px; font-family: var(--display); font-weight: 800; font-size: 24px; letter-spacing: .04em; text-transform: uppercase; opacity: .62; }

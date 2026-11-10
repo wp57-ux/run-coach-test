@@ -17,7 +17,7 @@ const { figure } = await import('./drawings.js').catch(() => ({ figure: () => ''
 
 // Shown in Settings, so you can tell which version your phone is running.
 // Keep in step with VERSION in sw.js.
-const APP_VERSION = '16 · Nov 5';
+const APP_VERSION = '17 · Nov 10';
 
 // ?fast=60 runs workouts 60× faster, for testing.
 const TIME_SCALE = Math.min(120, Math.max(1, Number(new URLSearchParams(location.search).get('fast')) || 1));
@@ -222,6 +222,35 @@ function bikeTargetsHTML(power, unit = bunit()) {
   return mach().shown.map(z => `${Bike.ZONES[z].label.toLowerCase()} <b>${fmtP(zoneW(z, power, unit), unit)}</b>`).join(' · ');
 }
 
+// The zones a session uses, hardest first (warm-up and cool-down are easy).
+const TGT_ORDER = ['hard', 'strong', 'steady', 'easy'];
+const usedZones = segs => TGT_ORDER.filter(z => segs.some(s => Bike.zoneOf(s.type) === z));
+
+// Big numbers in the session card: what to aim for in each part.
+function bikeTargetsStatsHTML(segs, power, unit = bunit()) {
+  if (!power || unit === 'feel') return '';
+  const u = unit === 'watts' ? 'W' : '';
+  const cells = usedZones(segs).map(z => {
+    const v = zoneW(z, power, unit);
+    return `<div><dt>${z === 'easy' ? 'Easy' : Bike.ZONES[z].label}</dt><dd>${unit === 'level' ? `L${v}` : v}<small>${u}</small></dd></div>`;
+  }).join('');
+  return `<p class="eyebrow tgts-k">Aim for</p><dl class="stats tgts">${cells}</dl>`;
+}
+
+// Warm-up: start easy and build toward about 80% of steady.
+const warmTop = (power, unit) => (unit === 'level' ? Math.max(1, power - 2) : Math.round(power * 0.8 / 5) * 5);
+
+// The big number on the workout screen for this part.
+function segTarget(seg) {
+  if (wk?.mode !== 'bike' || !wk.unit || wk.unit === 'feel') return '';
+  if (wk.setup && seg.type === 'steady') return 'Find it';
+  if (!wk.power) return '';
+  const z = Bike.zoneOf(seg.type);
+  const v = zoneW(z, wk.power, wk.unit);
+  if (seg.type === 'warmup') return wk.unit === 'level' ? `level ${v} → ${warmTop(wk.power, wk.unit)}` : `${v} → ${warmTop(wk.power, wk.unit)} W`;
+  return fmtP(v, wk.unit);
+}
+
 function bikeHeroHTML(c) {
   const { prog, info, power } = c;
   const m = mach();
@@ -229,7 +258,7 @@ function bikeHeroHTML(c) {
     ? c.unit === 'level'
       ? `This ${m.noun} sets your <b>steady level</b>. In the steady part, pick the level where you’re breathing harder but can still talk in short sentences, and remember it for the check-in.`
       : `This ${m.noun} sets your <b>steady power</b>. In the steady part, settle on an effort where you’re breathing harder but can still talk in short sentences, then note the watts on the screen.`
-    : power ? `Targets: ${bikeTargetsHTML(power)}.` : m.feelHelp;
+    : power ? (c.unit === 'watts' ? 'Go by the watts on the screen, not the METs.' : '') : m.feelHelp;
   return `<section class="hero">
       <div class="hero-top"><span class="eyebrow">Next ${m.noun} · Stage ${prog.stage}</span>${c.setup ? `<span class="tag">Setup ${m.noun}</span>` : info.milestone ? `<span class="tag">${esc(info.milestone)}</span>` : ''}</div>
       <h1>${esc(info.name)}</h1>
@@ -241,6 +270,7 @@ function bikeHeroHTML(c) {
         <div><dt>Burn</dt><dd>${c.kcal}<small>kcal</small></dd></div>
         ${steadyStat(power, c.unit)}
       </dl>
+      ${c.setup ? '' : bikeTargetsStatsHTML(c.segs, power, c.unit)}
       ${streakHTML(prog, true)}
       <p class="hint">${tip} ${m.form}</p>
     </section>`;
@@ -545,6 +575,7 @@ function progressHTML() {
       <p class="note">${bike
         ? mach().planNote
         : 'Every run starts with a 5-minute brisk walk. You move up after 2 green runs in a row, repeat on amber, and drop back one on red.'}</p>
+      ${bike && prog.power ? `<p class="note">Your targets now, at every stage: ${TGT_ORDER.filter(z => mach().shown.includes(z)).map(z => `${Bike.ZONES[z].label.toLowerCase()} <b>${fmtP(zoneW(z, prog.power), bunit())}</b>`).join(' · ')}. They go up as your steady ${bunit() === 'level' ? 'level' : 'watts'} climb${bunit() === 'level' ? 's' : ''}.</p>` : ''}
       <ol class="planlist">${planRows}</ol>
     </section>`;
 }
@@ -688,7 +719,7 @@ function settingsHTML() {
         <small>Cardio, primer, lift and stretch together. Over it, the lift drops to 2 sets each, then the primer and stretches get shorter.</small></div>
       <div class="field"><span>Rest between sets</span>
         <div class="seg">${Lift.REST_CHOICES.map(v => `<button data-act="set-num" data-path="lift.rest" data-v="${v}" aria-pressed="${Lift.mainRest(state) === v}">${v} s</button>`).join('')}</div>
-        <small>For the 3-set exercises. The 2-set ones rest 60 s, or 45 s if you pick 45. Skip rest any time.</small></div>
+        <small>For the 3-set exercises. The 2-set ones rest 60 s, or 45 s if you pick 45. Leg press, rows and split squats always get at least 90 s. Skip rest any time.</small></div>
       ${toggleHTML('lift.hipCare', 'Go easy on my outer hip', 'Leaves out the leg push-out machine and the figure-4 stretch. Turn it off once your hip has settled.')}
       ${state.lift.phase2 !== null ? toggleHTML('lift.phase2', 'Phase 2 exercises', 'Romanian deadlift, Bulgarian split squat, 45° back extension') : ''}
       ${Object.keys(state.lift.swaps).length ? `<button class="btn wide" data-act="swaps-reset">Undo my exercise swaps (${Object.keys(state.lift.swaps).length})</button>` : ''}
@@ -760,6 +791,7 @@ function workoutHTML() {
     </header>
     <div class="wk-main">
       <div class="wk-phase" id="wkPhase">Warm up</div>
+      <div class="wk-target" id="wkTarget"></div>
       <div class="wk-clock" id="wkClock"></div>
       <div class="wk-hint" id="wkHint"></div>
       <div class="wk-next" id="wkNext"></div>
@@ -781,7 +813,12 @@ function segHint(seg) {
       ? 'Find your steady level: <b>breathing harder, still talking in short sentences</b>' + (mach().rpm ? `,${mach().rpm}` : '') + '. Remember the level.'
       : 'Find your steady effort: <b>breathing harder, still talking in short sentences</b>. Note the watts you settle on.';
     const w = zoneW(z, wk.power, wk.unit);
-    return w ? `Aim for <b>${fmtP(w, wk.unit)}</b>${wk.unit === 'level' ? mach().rpm : ''} · ${mach().zones[z].talk}` : mach().zones[z].talk;
+    const talk = mach().zones[z].talk;
+    // A setup session has no steady value yet, so go by the one you just found.
+    if (!w && wk.setup && wk.unit === 'watts' && z === 'hard') return `About <b>a third more watts</b> than you held in the steady part · ${talk}`;
+    if (!w && wk.setup && wk.unit === 'watts' && z === 'easy' && seg.type === 'easy') return `About <b>60%</b> of your steady watts · ${talk}`;
+    if (w && seg.type === 'warmup') return `Start easy and build to about <b>${fmtP(warmTop(wk.power, wk.unit), wk.unit)}</b> by the end.`;
+    return w ? `${wk.unit === 'level' && mach().rpm ? `${mach().rpm.trim()} · ` : ''}${talk}` : talk;
   }
   const t = state.treadmill;
   if (seg.fiveK) return `<b>${t.runSpeed} ${spUnit()}</b> · stop at <b>${imp() ? '3.11 mi' : '5.00 km'}</b> on the display, then tap Skip`;
@@ -864,6 +901,7 @@ function onSegment(i) {
   void root.offsetWidth;
   root.classList.add('flashing');
   $('#wkPhase').textContent = seg.fiveK ? 'Run 5K' : TYPE_LABEL[seg.type];
+  $('#wkTarget').textContent = segTarget(seg);
   $('#wkHint').innerHTML = segHint(seg);
   const nx = wk.segs[i + 1];
   const nxW = nx && wk.mode === 'bike' ? zoneW(Bike.zoneOf(nx.type), wk.power, wk.unit) : null;
@@ -2628,7 +2666,7 @@ const actions = {
     const s = state.lifts.find(x => x.id === el.dataset.id);
     if (!s) return;
     const day = (Lift.DAY_LIST?.(s.day) || []).map(t => t.ex);
-    const opts = [...new Set([...day, ...Object.keys(EX)])].filter(id => EX[id] && !['reps', 'carry'].includes(EX[id].kind));
+    const opts = [...new Set([...day, ...Object.keys(EX)])].filter(id => EX[id] && !['reps', 'carry'].includes(EX[id].kind) && !Lift.CALVES.has(id));
     openSheet(`<h3>Add a missed exercise</h3>
       <p>To your Day ${s.day} lift on ${fmtDay(s.at)}. Leave rows blank if you did fewer sets.</p>
       <label class="field"><span>Exercise</span><select id="laEx">${opts.map(id => `<option value="${id}">${esc(exName(id))}${day.includes(id) ? '' : ' (not on this day)'}</option>`).join('')}</select></label>

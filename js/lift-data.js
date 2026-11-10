@@ -13,6 +13,7 @@
 //   dir      -1 when a bigger number makes it easier (assisted machines, bar notches)
 //   alts     choices behind the Swap button
 //   incLb    weight step in lb, when it isn't the usual 5 (small dumbbells)
+//   bigRest  a big lift that leaves you out of breath: rests at least 90 s
 
 export const EX = {
   chestpress: {
@@ -21,12 +22,12 @@ export const EX = {
     why: 'Chest and triceps: a fuller chest and pushing strength. On a machine you control the range, so your shoulders stay comfortable.',
   },
   csrow: {
-    name: 'Chest-supported row', fig: 'csrow', reps: [8, 12], alts: ['cablerow'],
+    name: 'Chest-supported row', fig: 'csrow', reps: [8, 12], bigRest: true, alts: ['cablerow'],
     cue: 'Chest stays on the pad. Pull your elbows back past your body, then lower slowly.',
     why: 'A thicker mid-back and better posture. It pulls your shoulders back and balances all the pressing, which your rotator cuffs need. The pad keeps your low back out of it.',
   },
   legpress: {
-    name: 'Leg press', fig: 'legpress', reps: [10, 15], back: 'load', safe: 'legext', alts: ['legext'],
+    name: 'Leg press', fig: 'legpress', reps: [10, 15], bigRest: true, back: 'load', safe: 'legext', alts: ['legext'],
     cue: 'Feet mid-to-high on the plate. Only go as deep as you can without your tailbone curling off the seat.',
     why: 'Quads and glutes. Strong quads help with front-of-knee pain, one of your running trouble spots.',
   },
@@ -81,12 +82,12 @@ export const EX = {
     why: 'Chest, shoulders, triceps and core in one move. Your hands stay planted while your shoulder blades move freely, which is usually kinder to rotator cuffs than dumbbell presses.',
   },
   cablerow: {
-    name: 'Seated cable row', fig: 'cablerow', reps: [8, 12], back: 'load', safe: 'csrow', alts: ['csrow'],
+    name: 'Seated cable row', fig: 'cablerow', reps: [8, 12], bigRest: true, back: 'load', safe: 'csrow', alts: ['csrow'],
     cue: 'Sit tall and keep your torso still. Pull the handle to your belly, elbows back. No rocking.',
     why: 'Mid-back and rear shoulders, for posture and a thicker-looking back.',
   },
   splitsquat: {
-    name: 'Split squat', fig: 'splitsquat', reps: [8, 12], perSide: true, back: 'load', safe: 'legext', alts: ['legpress'],
+    name: 'Split squat', fig: 'splitsquat', reps: [8, 12], perSide: true, bigRest: true, back: 'load', safe: 'legext', alts: ['legpress'],
     cue: 'One foot forward, torso tall, hold a rail or dumbbells. Lower your back knee to just above the floor.',
     why: 'Each leg works on its own, like in running. Evens out left/right strength and improves balance.',
   },
@@ -190,12 +191,12 @@ export const EX = {
     why: 'Hamstrings and glutes through a hip hinge, the same movement that protects your back when you pick things up.',
   },
   bss: {
-    name: 'Bulgarian split squat', fig: 'bss', reps: [8, 12], perSide: true, back: 'load', safe: 'legext', alts: ['splitsquat'],
+    name: 'Bulgarian split squat', fig: 'bss', reps: [8, 12], perSide: true, bigRest: true, back: 'load', safe: 'legext', alts: ['splitsquat'],
     cue: 'Back foot up on a bench. Torso tall, lower straight down, front knee over your foot.',
     why: 'Each leg works on its own, like in running. The harder version of the split squat.',
   },
   backext: {
-    name: '45° back extension', fig: 'backext', reps: [10, 15], back: 'load', safe: null, alts: ['calfpress'],
+    name: '45° back extension', fig: 'backext', reps: [10, 15], back: 'load', safe: null, alts: [],
     cue: 'Hips on the pad. Hinge down with a flat back, rise until your body is straight, no further. Bodyweight first: enter 0.',
     why: 'Endurance for the muscles along your spine, which helps guard against back pain.',
   },
@@ -203,7 +204,8 @@ export const EX = {
 
 // Straight sets: every set of one exercise, then the next. No supersets (a
 // busy gym), except back-to-back on the same machine. Every exercise here was
-// approved by you on Oct 19. 3-set exercises rest 90 s (Settings), 2-set ones 60 s.
+// approved by you on Oct 19. 3-set exercises rest 45 s (Settings), 2-set ones
+// 45 s, big lifts 90 s. The calf exercises stay listed but are left out (Nov 10).
 // same = stays on the machine from the exercise before.
 export const DAYS = {
   A: {

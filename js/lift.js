@@ -105,6 +105,16 @@ export const LEG = new Set(['legpress', 'calfpress', 'hipthrust', 'legcurl', 'sp
 
 export const REST_CHOICES = [45, 60, 90, 120];
 export const mainRest = state => (REST_CHOICES.includes(state.lift.rest) ? state.lift.rest : 90);
+// Nov 10: 45 s left you out of breath on the leg press and rows. Big lifts
+// (bigRest in lift-data.js) get at least 90 s: in a 2024 meta-analysis
+// (Singer et al.) resting over 60 s gave a little more muscle, with no extra
+// gain past about 90 s.
+export const BIG_REST = 90;
+export const restFor = (state, ex, sets) => (EX[ex]?.bigRest ? Math.max(BIG_REST, mainRest(state)) : sets >= 3 ? mainRest(state) : Math.min(60, mainRest(state)));
+
+// Nov 10, your call: no calf exercises with weights. A phase 2 swap that
+// replaces one (back extension for the calf raise) still comes in.
+export const CALVES = new Set(['calfpress', 'seatedcalf', 'slcalf', 'slcalfbent']);
 
 // One block per exercise, done as straight sets. A trimmed day (long ride or
 // run first) drops the optional extras and does 2 sets instead of 3. 2-set
@@ -118,12 +128,12 @@ export function buildLift(state, st, { day = st.day, trim = false, noLegs = fals
     if (state.lift.hipCare && t.ex === 'hipabd') continue;
     const orig = p2[t.ex] || t.ex;
     const ex = resolveItem(state, orig, st);
-    if (!ex || (noLegs && LEG.has(ex)) || blocks.some(b => b.items[0].ex === ex)) continue;
+    if (!ex || CALVES.has(ex) || (noLegs && LEG.has(ex)) || blocks.some(b => b.items[0].ex === ex)) continue;
     const sets = trim ? Math.min(t.sets, 2) : t.sets;
     // "Stay on the machine" only holds if the exercise before is still the one it follows.
     const prev = DAYS[day].list[DAYS[day].list.indexOf(t) - 1];
     const same = t.same && orig === t.ex && ex === t.ex && blocks.at(-1)?.items[0].ex === prev?.ex ? t.same : null;
-    blocks.push({ key: blocks.length + 1, items: [{ orig, ex }], sets, rest: sets >= 3 ? mainRest(state) : Math.min(60, mainRest(state)), optional: !!t.optional, same });
+    blocks.push({ key: blocks.length + 1, items: [{ orig, ex }], sets, rest: restFor(state, ex, sets), optional: !!t.optional, same });
   }
   return { day, blocks };
 }
