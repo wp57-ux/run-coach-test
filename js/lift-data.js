@@ -14,10 +14,11 @@
 //   alts     choices behind the Swap button
 //   incLb    weight step in lb, when it isn't the usual 5 (small dumbbells)
 //   bigRest  a big lift that leaves you out of breath: rests at least 90 s
+//   backup   a stand-in for a busy machine: swapping to it lasts one workout
 
 export const EX = {
   chestpress: {
-    name: 'Chest press machine', fig: 'chestpress', reps: [8, 12], press: true, shSafe: 'pushup', alts: ['pushup'],
+    name: 'Chest press machine', fig: 'chestpress', reps: [8, 12], press: true, shSafe: 'pushup', alts: ['pecdeck', 'pushup'],
     cue: 'Neutral grip if it has one. Elbows about 45° from your body. Stop when your hands are level with your chest.',
     why: 'Chest and triceps: a fuller chest and pushing strength. On a machine you control the range, so your shoulders stay comfortable.',
   },
@@ -143,6 +144,12 @@ export const EX = {
     cue: 'On your back, dumbbell on your hips, feet flat. Drive your hips up with your glutes and keep your ribs down.',
     why: 'Glutes: the biggest muscles supporting your pelvis and low back. They shape your backside and help your running.',
   },
+  // Nov 16, approved by you: for days the chest press is taken.
+  pecdeck: {
+    name: 'Pec deck (chest fly machine)', fig: 'pecdeck', reps: [10, 15], backup: true, press: true, shSafe: 'pushup', alts: ['chestpress'],
+    cue: 'Seat so the handles are at chest height, elbows slightly bent. Squeeze the handles together in front of you, then open slowly. Stop when your hands are in line with your chest, never behind it.',
+    why: 'Chest on its own, a good stand-in when the chest press is busy. Stopping with your hands in line with your chest keeps the strain off your rotator cuffs.',
+  },
   revpec: {
     name: 'Reverse pec deck', fig: 'revpec', reps: [12, 15], alts: ['facepull'],
     cue: 'Chest on the pad, arms slightly bent. Sweep your arms back and out at shoulder height, then return slowly.',
@@ -247,7 +254,7 @@ export const JUMP_NAME = {
   chestpress: 'Chest', csrow: 'Row', legpress: 'Leg press', calfpress: 'Calves', latraise: 'Lat raise',
   shoulderpress: 'Shoulder press', pulldown: 'Pulldown', legcurl: 'Leg curl', facepull: 'Face pull', suitcase: 'Carry',
   assistdip: 'Dips', pushup: 'Push-up', cablerow: 'Row', splitsquat: 'Split squat', hipabd: 'Leg push-out',
-  seatedcalf: 'Calves', hammercurl: 'Biceps', pushdown: 'Triceps',
+  seatedcalf: 'Calves', hammercurl: 'Biceps', pushdown: 'Triceps', pecdeck: 'Pec deck',
 };
 
 // Offered after 6 weeks with no red back days.

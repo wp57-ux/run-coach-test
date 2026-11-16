@@ -17,7 +17,7 @@ const { figure } = await import('./drawings.js').catch(() => ({ figure: () => ''
 
 // Shown in Settings, so you can tell which version your phone is running.
 // Keep in step with VERSION in sw.js.
-const APP_VERSION = '18 · Nov 16';
+const APP_VERSION = '19 · Nov 16';
 
 // ?fast=60 runs workouts 60× faster, for testing.
 const TIME_SCALE = Math.min(120, Math.max(1, Number(new URLSearchParams(location.search).get('fast')) || 1));
@@ -2874,14 +2874,16 @@ const actions = {
     const opts = [...new Set([item.orig, ...(EX[item.orig]?.alts || []), ...(EX[item.ex].alts || [])])].filter(id => id !== item.ex && EX[id]);
     openSheet(`<h3>Swap exercise</h3>
       <p>Machine taken, or this one doesn’t agree with you? The app remembers your pick.</p>
-      <div class="swaps">${opts.map(id => `<button class="swap-opt" data-act="ls-swap-to" data-v="${id}">${figure(EX[id].fig)}<span><b>${esc(EX[id].name)}</b><small>${esc(EX[id].why)}</small></span></button>`).join('')}</div>
+      <div class="swaps">${opts.map(id => `<button class="swap-opt" data-act="ls-swap-to" data-v="${id}">${figure(EX[id].fig)}<span><b>${esc(EX[id].name)}${EX[id].backup ? ' · just today' : ''}</b><small>${esc(EX[id].why)}</small></span></button>`).join('')}</div>
       <button class="btn wide ghost" data-act="sheet-close">Cancel</button>`);
   },
 
   'ls-swap-to'(el) {
     const id = el.dataset.v;
     const { item } = curItem();
-    if (id === item.orig) delete state.lift.swaps[item.orig]; else state.lift.swaps[item.orig] = id;
+    // A stand-in for a busy machine (backup) is just for this workout.
+    const today = !!EX[id].backup;
+    if (id === item.orig) delete state.lift.swaps[item.orig]; else if (!today) state.lift.swaps[item.orig] = id;
     persist();
     item.ex = id;
     ls.targets[id] ||= Lift.target(state, id, ls.st);
@@ -2889,7 +2891,7 @@ const actions = {
     closeSheet();
     saveLs();
     showLift();
-    toast(`Swapped to ${esc(EX[id].name)}`);
+    toast(`Swapped to ${esc(EX[id].name)}${today ? ' for today' : ''}`);
   },
 
   'ls-note'() {
