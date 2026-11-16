@@ -17,7 +17,7 @@ const { figure } = await import('./drawings.js').catch(() => ({ figure: () => ''
 
 // Shown in Settings, so you can tell which version your phone is running.
 // Keep in step with VERSION in sw.js.
-const APP_VERSION = '17 · Nov 10';
+const APP_VERSION = '18 · Nov 16';
 
 // ?fast=60 runs workouts 60× faster, for testing.
 const TIME_SCALE = Math.min(120, Math.max(1, Number(new URLSearchParams(location.search).get('fast')) || 1));
@@ -211,7 +211,7 @@ function cardioCtx(now = Date.now()) {
 }
 
 const bunit = () => Bike.unitOf(state);
-const zoneW = (zone, power, unit = bunit()) => Bike.zoneTarget(zone, power, unit);
+const zoneW = (zone, power, unit = bunit()) => Bike.zoneTarget(zone, power, unit, Bike.machineKey(state));
 // "level 11" or "120 W"
 const fmtP = (v, unit = bunit()) => (unit === 'level' ? `level ${v}` : `${v} W`);
 const STEADY_WORD = { level: 'steady level', watts: 'steady power' };
@@ -815,7 +815,7 @@ function segHint(seg) {
     const w = zoneW(z, wk.power, wk.unit);
     const talk = mach().zones[z].talk;
     // A setup session has no steady value yet, so go by the one you just found.
-    if (!w && wk.setup && wk.unit === 'watts' && z === 'hard') return `About <b>a third more watts</b> than you held in the steady part · ${talk}`;
+    if (!w && wk.setup && wk.unit === 'watts' && z === 'hard') return `About <b>${Math.round((mach().zones.hard.pct - 1) * 100)}% more watts</b> than you held in the steady part · ${talk}`;
     if (!w && wk.setup && wk.unit === 'watts' && z === 'easy' && seg.type === 'easy') return `About <b>60%</b> of your steady watts · ${talk}`;
     if (w && seg.type === 'warmup') return `Start easy and build to about <b>${fmtP(warmTop(wk.power, wk.unit), wk.unit)}</b> by the end.`;
     return w ? `${wk.unit === 'level' && mach().rpm ? `${mach().rpm.trim()} · ` : ''}${talk}` : talk;

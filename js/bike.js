@@ -55,7 +55,9 @@ export const ELLIPTICAL_ZONES = {
   easy: { label: 'Easy', pct: 0.6, met: 4, talk: 'Easy pace. You could chat all day.' },
   steady: { label: 'Steady', pct: 1, met: 5, talk: 'Breathing harder, still talking in short sentences.' },
   strong: { label: 'Strong', pct: 1.15, met: 7, talk: 'A few words at a time.' },
-  hard: { label: 'Hard', pct: 1.35, met: 9, talk: 'Big effort, a few words at most. Hard, not all-out.' },
+  // Nov 16: at 135% of steady (215–225 W) you could only hold about 200 W for
+  // 45 s, so hard is now 115%: hard enough, and a full minute five times over.
+  hard: { label: 'Hard', pct: 1.15, met: 9, talk: 'Big effort, a few words at most. Hard, not all-out.' },
 };
 
 // Nov 10: never more than 21 minutes in all (your limit; it gets boring), so
@@ -112,7 +114,7 @@ export const MACHINES = {
     liftOnly: 'Starts with 5 min easy on the elliptical or a brisk treadmill walk.',
     // Glave et al. 2018: ellipticals overestimate by about 100 kcal per 30 min.
     calNote: 'Optional. Elliptical screens tend to read high, so leaving this blank and using the app’s estimate is usually closer.',
-    wattsHelp: 'Every target is a share of your steady watts: easy 60%, steady 100%, hard 135%. Watts differ between machines, so try to use the same one. Aim by watts, not METs: the METs on the screen are worked out from the same watts and your weight, and they read high. Calories still come from effort, not watts: no formula turns elliptical watts into calories reliably.',
+    wattsHelp: 'Every target is a share of your steady watts: easy 60%, steady 100%, hard 115%. Watts differ between machines, so try to use the same one. Aim by watts, not METs: the METs on the screen are worked out from the same watts and your weight, and they read high. Calories still come from effort, not watts: no formula turns elliptical watts into calories reliably.',
     wattsNote: 'The watts you held in the steady part, from the elliptical’s screen.',
     wattsEg: 'e.g. 150',
   },
@@ -156,14 +158,15 @@ export function bikeSegments(n, m = 'bike', { setup = false } = {}) {
 
 export const zoneOf = type => (type === 'warmup' || type === 'cooldown' ? E : type);
 
-export const zoneWatts = (zone, power) => (power ? Math.max(20, Math.round(power * ZONES[zone].pct / 5) * 5) : null);
+// Each machine has its own shares of steady (the elliptical's hard is lower).
+export const zoneWatts = (zone, power, m = 'bike') => (power ? Math.max(20, Math.round(power * (MACHINES[m] || MACHINES.bike).zones[zone].pct / 5) * 5) : null);
 
 // On levels: at a steady cadence a level is roughly 15 W, so these steps
 // match the watts zones (easy 60%, strong 115%, hard 135% of steady).
 const LEVEL_STEP = { easy: -4, steady: 0, strong: 2, hard: 4 };
-export function zoneTarget(zone, power, unit = 'watts') {
+export function zoneTarget(zone, power, unit = 'watts', m = 'bike') {
   if (!power) return null;
-  return unit === 'level' ? Math.max(1, power + LEVEL_STEP[zone]) : zoneWatts(zone, power);
+  return unit === 'level' ? Math.max(1, power + LEVEL_STEP[zone]) : zoneWatts(zone, power, m);
 }
 
 export const isWork = type => type === S || type === ST || type === H;
